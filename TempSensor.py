@@ -13,19 +13,20 @@ os.system("sudo modprobe w1-therm")
 os.system("sudo modprobe w1-gpio")
 while True:
 	Start = time.time()
-	db = MySQLdb.connect(host="",	# Your host, usually localhost
-		user="",		# Your username
-		passwd="",		# Your password
-		db="")			# Name of the data base
+	db = MySQLdb.connect(host="*Host*",	# Your host, usually localhost
+		user="*User*",		# Your username
+		passwd="*Password*",		# Your password
+		db="*DataBase*")		# Name of the data base
 
 	cur = db.cursor() 
-	SQLQ = "INSERT INTO TBL_Temp(Time, Temp, CPUTemp) VALUES (%s, %s, %s)"
+	SQLQ = "INSERT INTO TBL_Temp(Time, Date, Temp, CPUTemp) VALUES (%s, %s, %s, %s)"
 	tfile = open(glob.glob("/sys/bus/w1/devices/w1_bus_master1/"+"28*")[0]+"/w1_slave")	# Auto-finds your device
 	text = tfile.read()
 	tfile.close()
 	temperature_data = text.split()[-1]
 	temperature = float(temperature_data[2:])/1000.0
-	UTime =  int(time.time())
+	UTime =  str(time.strftime("%H:%M:%S", time.gmtime()))
+	Date = str(time.strftime("%d %m %Y", time.gmtime()))
 	CPUTempC = "/opt/vc/bin/vcgencmd measure_temp > CPUTEMP"
 	os.system(CPUTempC)
 	CPUFile = open("CPUTEMP")
@@ -34,9 +35,10 @@ while True:
 	TempCPU = CPUText[5:9]
 	TempCPU = eval(TempCPU)
 	print "TIME: " ,UTime
+	print "DATE: " ,Date
 	print "TEMP: " ,temperature
 	print "CPU TEMP: " ,TempCPU
-	cur.execute(SQLQ, (UTime, temperature, TempCPU))
+	cur.execute(SQLQ, (UTime, Date, temperature, TempCPU))
 	db.commit()
 	End = time.time()
-	time.sleep(600-(End-Start))	# Loops every 600 seconds, depending on how long it took to execute
+	time.sleep(3600-(End-Start))	# Loops every 3600 seconds (1H), depending on how long it took to execute
